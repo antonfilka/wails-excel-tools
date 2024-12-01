@@ -83,13 +83,13 @@ func (a *App) GetExcelFilesSheetNames(file1 string, file2 string) (SheetResponse
 	}
 
 	// Process the first file
-	sheets1, err := a.getSheetNames(file1)
+	sheets1, err := a.GetFileSheetsNames(file1)
 	if err != nil {
 		return SheetResponse{}, fmt.Errorf("failed to process file1: %s", err)
 	}
 
 	// Process the second file
-	sheets2, err := a.getSheetNames(file2)
+	sheets2, err := a.GetFileSheetsNames(file2)
 	if err != nil {
 		return SheetResponse{}, fmt.Errorf("failed to process file2: %s", err)
 	}
@@ -100,7 +100,7 @@ func (a *App) GetExcelFilesSheetNames(file1 string, file2 string) (SheetResponse
 	}, nil
 }
 
-func (a *App) getSheetNames(filePath string) ([]string, error) {
+func (a *App) GetFileSheetsNames(filePath string) ([]string, error) {
 	ext := filepath.Ext(filePath)
 	switch ext {
 	case ".xlsx":
@@ -118,6 +118,10 @@ func (a *App) getSheetNames(filePath string) ([]string, error) {
 	}
 }
 
+type PersonsData struct {
+    Arr1 []string
+    Arr2 []string
+}
 
 func (a *App) CombineExcelFiles(file1Path, file2Path, sheetName1, sheetName2 string) error {
 	// Read File 1
@@ -137,28 +141,73 @@ func (a *App) CombineExcelFiles(file1Path, file2Path, sheetName1, sheetName2 str
 	file1Data = file1Data[1:] // Skip headers
 	file2Data = file2Data[1:] // Skip headers
 
-	// Create a map to track names in File 1
 	combinedData := [][]string{headers} // Start with headers
 	nameIndex := make(map[string]int)   // Map to store the row index of names
+
+	personsData := make(map[string]PersonsData) 
 
 	for _, row := range file1Data {
 		if len(row) > 0 {
 			name := strings.ToLower(row[0]) // Column A is the name
 			combinedData = append(combinedData, row)
 			nameIndex[name] = len(combinedData) - 1 // Map name to its row index
+
+			personsData[name] = PersonsData{
+				Arr2: row,
+			}
 		}
 	}
 
-	// Add data from File 2 as a second row for matching names
 	for _, row := range file2Data {
 		if len(row) > 0 {
 			name := strings.ToLower(row[0]) // Column A is the name
 			if index, exists := nameIndex[name]; exists {
-				// Add data from File 2 as a second row
 				combinedData = append(combinedData[:index+1], append([][]string{row}, combinedData[index+1:]...)...)
+				
+			}
+			personsData[name] = PersonsData{
+				Arr2: personsData[name].Arr2,
+				Arr1: row,
 			}
 		}
 	}
+
+	newCombinedData := [][]string{headers}
+	var lastName string
+
+	for name, data := range personsData {
+		if lastName != "" && lastName != name {
+			newCombinedData = append(newCombinedData, []string{})
+		}
+		if len(data.Arr1) > 0 {
+			data.Arr1[0] = "1C: " + data.Arr1[0] // Modify the first value
+			newCombinedData = append(newCombinedData, data.Arr1)
+		}
+		if len(data.Arr2) > 0 {
+			// Add Arr2 row (the second row for the person)
+			newCombinedData = append(newCombinedData, data.Arr2)
+		}
+
+		lastName = name
+	}
+
+	// Print newCombinedData for debugging
+	for _, row := range newCombinedData {
+		fmt.Println(row)
+	}
+
+	// for _, row := range file2Data {
+	// 	if len(row) > 0 {
+	// 		name := strings.ToLower(row[0]) // Column A is the name
+	// 		if index, exists := nameIndex[name]; exists {
+	// 			// Add data from File 2 as a second row
+	// 			fmt.Println("Exist, ", name)
+	// 			combinedData = append(combinedData[:index+1], append([][]string{row}, combinedData[index+1:]...)...)
+	// 		} else {
+	// 			fmt.Println("Doesn't exist, ", name)
+	// 		}
+	// 	}
+	// }
 
 	// Prompt the user to save the file
 	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
@@ -173,7 +222,7 @@ func (a *App) CombineExcelFiles(file1Path, file2Path, sheetName1, sheetName2 str
 	}
 
 	// Write the combined data to the new file
-	if err := Excel.WriteXLSXFormatted(savePath, combinedData); err != nil {
+	if err := Excel.WriteXLSXFormatted(savePath, newCombinedData); err != nil {
 		return fmt.Errorf("failed to write combined file: %v", err)
 	}
 

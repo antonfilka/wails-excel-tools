@@ -2,7 +2,6 @@ package excel
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -64,12 +63,7 @@ func WriteXLSXFormatted(outputPath string, data [][]string) error {
 				if err := f.SetCellStyle(sheetName, cell, cell, headerStyle); err != nil {
 					return fmt.Errorf("failed to set header style: %v", err)
 				}
-			} else {
-				// Set cell type as number if the value is numeric
-				if _, err := strconv.ParseFloat(cellValue, 64); err == nil {
-					f.SetCellValue(sheetName, cell, cellValue) // Overwrite as number
-				}
-			}
+			} 
 		}
 	}
 
@@ -101,7 +95,6 @@ func WriteXLSXFormatted(outputPath string, data [][]string) error {
 
 	return nil
 }
-
 
 func GetXlsxSheetNames(filePath string) ([]string, error) {
 	f, err := excelize.OpenFile(filePath)

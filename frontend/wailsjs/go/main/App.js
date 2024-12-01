@@ -10,6 +10,10 @@ export function GetExcelFilesSheetNames(arg1, arg2) {
   return window['go']['main']['App']['GetExcelFilesSheetNames'](arg1, arg2);
 }
 
+export function GetFileSheetsNames(arg1) {
+  return window['go']['main']['App']['GetFileSheetsNames'](arg1);
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
