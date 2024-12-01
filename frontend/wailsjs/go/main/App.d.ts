@@ -6,6 +6,8 @@ export function CombineExcelFiles(arg1:string,arg2:string,arg3:string,arg4:strin
 
 export function GetExcelFilesSheetNames(arg1:string,arg2:string):Promise<main.SheetResponse>;
 
+export function GetFileSheetsNames(arg1:string):Promise<Array<string>>;
+
 export function Greet(arg1:string):Promise<string>;
 
 export function OpenExcelFile():Promise<string>;
